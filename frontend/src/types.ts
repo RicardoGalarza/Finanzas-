@@ -52,6 +52,7 @@ export type Expense = {
   status: 'PENDING' | 'PAID' | 'OVERDUE'
   expenseType: 'ONE_TIME' | 'RECURRING'
   frequency?: 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | null
+  recurrenceEndDate?: string | null
   paymentMethod?: string
   notes?: string
   paidAt?: string | null
@@ -137,3 +138,36 @@ export const EXPENSE_CATEGORIES = [
   'Ahorro / inversión',
   'Otros',
 ]
+
+/** Medios de pago y bancos de Chile para ingresos/gastos */
+export const PAYMENT_METHODS = [
+  'Efectivo',
+  'Transferencia bancaria',
+  'Tarjeta de débito',
+  'Tarjeta de crédito',
+  'Cheque',
+  'Webpay / Transbank',
+  'Khipu',
+  'Flow',
+  'Banco de Chile',
+  'Banco Estado',
+  'Banco Santander',
+  'Banco BCI',
+  'Scotiabank',
+  'Banco Itaú',
+  'Banco Security',
+  'Banco Falabella',
+  'Banco Ripley',
+  'Banco BICE',
+  'Banco Consorcio',
+  'Banco Internacional',
+  'Banco Edwards',
+  'Coopeuch',
+  'Tenpo',
+  'MACH',
+  'Mercado Pago',
+  'Prepago Los Héroes',
+  'Caja Los Andes',
+  'Caja 18',
+  'Otro',
+] as const

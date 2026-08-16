@@ -10,7 +10,6 @@ const schema = z.object({
   fullName: z.string().min(2),
   country: z.string().min(2),
   currencyCode: z.string().min(3),
-  initialBalance: z.coerce.number().min(0),
   shared: z.boolean(),
   spaceName: z.string().min(2),
   incomeDescription: z.string().optional(),
@@ -31,7 +30,6 @@ export function OnboardingPage() {
     defaultValues: {
       country: 'Chile',
       currencyCode: 'CLP',
-      initialBalance: 0,
       shared: false,
       spaceName: 'Mi espacio',
       billDueDay: 5,
@@ -64,7 +62,7 @@ export function OnboardingPage() {
           fullName: values.fullName,
           country: values.country,
           currencyCode: values.currencyCode,
-          initialBalance: values.initialBalance,
+          initialBalance: 0,
           shared: values.shared,
           spaceName: values.spaceName,
           incomes,
@@ -97,7 +95,6 @@ export function OnboardingPage() {
               <option value="MXN">MXN</option>
             </select>
           </label>
-          <label>Saldo inicial<input type="number" step="1" {...register('initialBalance')} /></label>
           <label>Nombre del espacio<input {...register('spaceName')} /></label>
           <label style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem' }}>
             <input type="checkbox" {...register('shared')} />

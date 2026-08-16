@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import {
   CalendarDays,
   CreditCard,
   Home,
   LogOut,
+  Moon,
+  Sun,
   TrendingUp,
   Wallet,
 } from 'lucide-react'
@@ -11,6 +14,13 @@ import { useAuth } from '../auth'
 
 export function AppLayout() {
   const { user, spaces, spaceId, setSpaceId, logout } = useAuth()
+  const [theme, setTheme] = useState(() => localStorage.getItem('flujoclaro_theme') ?? 'light')
+
+  const changeTheme = (nextTheme: string) => {
+    setTheme(nextTheme)
+    localStorage.setItem('flujoclaro_theme', nextTheme)
+    document.documentElement.setAttribute('data-theme', nextTheme)
+  }
 
   const links = [
     { to: '/app', label: 'Inicio', icon: Home, end: true },
@@ -53,7 +63,35 @@ export function AppLayout() {
           ))}
         </nav>
         <div style={{ marginTop: 'auto' }} className="stack">
-          <button className="btn secondary" style={{ color: 'white', borderColor: 'rgba(255,255,255,0.25)' }} onClick={logout}>
+          <button
+            type="button"
+            className="btn secondary"
+            style={{
+              color: 'white',
+              borderColor: 'rgba(255,255,255,0.25)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.45rem',
+            }}
+            onClick={() => changeTheme(theme === 'dark' ? 'light' : 'dark')}
+            aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+          </button>
+          <button
+            className="btn secondary"
+            style={{
+              color: 'white',
+              borderColor: 'rgba(255,255,255,0.25)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.45rem',
+            }}
+            onClick={logout}
+          >
             <LogOut size={16} /> Cerrar sesión
           </button>
         </div>

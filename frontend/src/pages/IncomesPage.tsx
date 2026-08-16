@@ -6,7 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuth } from '../auth'
 import { api, ApiError } from '../lib/api'
 import { formatMoney } from '../lib/format'
-import { INCOME_CATEGORIES, type Income } from '../types'
+import { useTemporaryMessage } from '../lib/useTemporaryMessage'
+import { INCOME_CATEGORIES, PAYMENT_METHODS, type Income } from '../types'
 
 const schema = z.object({
   description: z.string().min(2),
@@ -29,7 +30,7 @@ export function IncomesPage() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [editing, setEditing] = useState<Income | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
+  const { message, showMessage } = useTemporaryMessage()
   const [error, setError] = useState<string | null>(null)
 
   const query = useQuery({
@@ -75,7 +76,7 @@ export function IncomesPage() {
       }, token)
     },
     onSuccess: async () => {
-      setMessage(editing ? 'Ingreso actualizado' : 'Ingreso creado')
+      showMessage(editing ? 'Ingreso actualizado' : 'Ingreso creado')
       setError(null)
       setEditing(null)
       form.reset({
@@ -97,7 +98,7 @@ export function IncomesPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api(`/api/spaces/${spaceId}/incomes/${id}`, { method: 'DELETE' }, token),
     onSuccess: async () => {
-      setMessage('Ingreso eliminado')
+      showMessage('Ingreso eliminado')
       await qc.invalidateQueries({ queryKey: ['incomes', spaceId] })
       await qc.invalidateQueries({ queryKey: ['dashboard', spaceId] })
     },
@@ -151,7 +152,14 @@ export function IncomesPage() {
                 </select>
               </label>
             )}
-            <label>Medio / cuenta<input {...form.register('paymentMethod')} /></label>
+            <label>Medio / banco
+              <select {...form.register('paymentMethod')}>
+                <option value="">Seleccionar...</option>
+                {PAYMENT_METHODS.map((method) => (
+                  <option key={method} value={method}>{method}</option>
+                ))}
+              </select>
+            </label>
             <label>Notas<textarea {...form.register('notes')} /></label>
           </div>
           <div className="row">

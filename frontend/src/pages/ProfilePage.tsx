@@ -1,14 +1,14 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth'
 import { api, apiBlob, ApiError, apiForm } from '../lib/api'
-import { formatMoney } from '../lib/format'
+import { useTemporaryMessage } from '../lib/useTemporaryMessage'
 
 export function ProfilePage() {
   const { user, spaces, spaceId, token, logout, refreshProfile } = useAuth()
   const space = spaces.find((s) => s.id === spaceId)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
+  const { message, showMessage, clearMessage } = useTemporaryMessage()
   const [error, setError] = useState<string | null>(null)
   const [avatarVersion, setAvatarVersion] = useState(0)
   const [fullName, setFullName] = useState('')
@@ -20,14 +20,6 @@ export function ProfilePage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [savingPassword, setSavingPassword] = useState(false)
-  const [theme, setTheme] = useState(() => localStorage.getItem('flujoclaro_theme') ?? 'light')
-  const messageTimer = useRef<number | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (messageTimer.current) window.clearTimeout(messageTimer.current)
-    }
-  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -37,11 +29,7 @@ export function ProfilePage() {
     setReminderDays(user.reminderDays ?? 3)
   }, [user])
 
-  const showTemporaryMessage = (text: string) => {
-    if (messageTimer.current) window.clearTimeout(messageTimer.current)
-    setMessage(text)
-    messageTimer.current = window.setTimeout(() => setMessage(null), 5000)
-  }
+  const showTemporaryMessage = showMessage
 
   useEffect(() => {
     if (!user?.hasAvatar || !token) {
@@ -72,7 +60,7 @@ export function ProfilePage() {
     }
     setUploading(true)
     setError(null)
-    setMessage(null)
+    clearMessage()
     try {
       const formData = new FormData()
       formData.append('avatar', file)
@@ -94,7 +82,13 @@ export function ProfilePage() {
     try {
       await api('/api/auth/me/profile', {
         method: 'PUT',
-        body: JSON.stringify({ fullName, country, currencyCode, reminderDays, spaceId }),
+        body: JSON.stringify({
+          fullName,
+          country,
+          currencyCode,
+          reminderDays,
+          spaceId,
+        }),
       }, token)
       await refreshProfile()
       showTemporaryMessage('Configuración actualizada')
@@ -127,12 +121,6 @@ export function ProfilePage() {
     } finally {
       setSavingPassword(false)
     }
-  }
-
-  const changeTheme = (nextTheme: string) => {
-    setTheme(nextTheme)
-    localStorage.setItem('flujoclaro_theme', nextTheme)
-    document.documentElement.setAttribute('data-theme', nextTheme)
   }
 
   const initials = user?.fullName
@@ -171,7 +159,6 @@ export function ProfilePage() {
         </div>
         <div className="form-grid">
           <div><strong>Espacio activo</strong><div className="muted">{space?.name}</div></div>
-          <div><strong>Saldo inicial</strong><div className="muted">{formatMoney(space?.initialBalance ?? 0, space?.currencyCode ?? 'CLP')}</div></div>
           <div><strong>Rol</strong><div className="muted">{space?.role}</div></div>
         </div>
       </article>
@@ -214,13 +201,6 @@ export function ProfilePage() {
                 <option value={7}>7 días antes</option>
                 <option value={15}>15 días antes</option>
                 <option value={30}>30 días antes</option>
-              </select>
-            </label>
-            <label>
-              Apariencia
-              <select value={theme} onChange={(event) => changeTheme(event.target.value)}>
-                <option value="light">Modo claro</option>
-                <option value="dark">Modo oscuro</option>
               </select>
             </label>
           </div>

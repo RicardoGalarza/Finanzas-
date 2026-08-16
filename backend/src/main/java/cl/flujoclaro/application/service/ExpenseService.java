@@ -26,6 +26,7 @@ public class ExpenseService {
             String responsiblePerson,
             RecurrenceType expenseType,
             Frequency frequency,
+            LocalDate recurrenceEndDate,
             String paymentMethod,
             String notes
     ) {}
@@ -54,6 +55,7 @@ public class ExpenseService {
                 command.responsiblePerson(),
                 command.expenseType(),
                 command.frequency(),
+                command.recurrenceEndDate(),
                 command.paymentMethod(),
                 command.notes(),
                 userId
@@ -73,6 +75,7 @@ public class ExpenseService {
                 command.responsiblePerson(),
                 command.expenseType(),
                 command.frequency(),
+                command.recurrenceEndDate(),
                 command.paymentMethod(),
                 command.notes(),
                 userId
@@ -82,16 +85,70 @@ public class ExpenseService {
 
     @Transactional
     public Expense markPaid(UUID spaceId, UUID expenseId, UUID userId, LocalDate paidAt, String receiptPath) {
+        return markPaid(spaceId, expenseId, userId, paidAt, null, receiptPath);
+    }
+
+    @Transactional
+    public Expense markPaid(UUID spaceId, UUID expenseId, UUID userId, LocalDate paidAt,
+                            String paymentMethod, String receiptPath) {
         accessService.requireWriteAccess(spaceId, userId);
         Expense expense = getOwned(spaceId, expenseId);
-        expense.markPaid(paidAt, userId);
+        boolean firstPayment = expense.getStatus() != ExpenseStatus.PAID;
+        expense.markPaid(paidAt, paymentMethod, userId);
         if (receiptPath != null) {
             if (expense.getReceiptPath() != null) {
                 receiptStorage.delete(expense.getReceiptPath());
             }
             expense.attachReceipt(receiptPath, userId);
         }
-        return expenseRepository.save(expense);
+        Expense paidExpense = expenseRepository.save(expense);
+        if (firstPayment && expense.getExpenseType() == RecurrenceType.RECURRING) {
+            LocalDate nextDueDate = expense.nextDueDate();
+            if (nextDueDate != null && canCreateNextInstallment(expense, nextDueDate)) {
+                Expense nextExpense = Expense.create(
+                        spaceId,
+                        expense.getName(),
+                        expense.getAmount(),
+                        nextDueDate,
+                        expense.getCategory(),
+                        expense.getResponsiblePerson(),
+                        expense.getExpenseType(),
+                        expense.getFrequency(),
+                        expense.getRecurrenceEndDate(),
+                        expense.getPaymentMethod(),
+                        expense.getNotes(),
+                        userId
+                );
+                expenseRepository.save(nextExpense);
+            }
+        }
+        return paidExpense;
+    }
+
+    /**
+     * Evita generar cuotas repetidas cuando ya existe la del próximo vencimiento
+     * o cuando la serie todavía tiene una cuota sin pagar igual o posterior.
+     */
+    private boolean canCreateNextInstallment(Expense paid, LocalDate nextDueDate) {
+        return expenseRepository.findAllBySpace(paid.getSpaceId()).stream()
+                .filter(other -> !other.getId().equals(paid.getId()))
+                .filter(other -> other.getName().equalsIgnoreCase(paid.getName()))
+                .noneMatch(other -> other.getDueDate().isEqual(nextDueDate)
+                        || (other.getStatus() != ExpenseStatus.PAID
+                            && !other.getDueDate().isBefore(paid.getDueDate())));
+    }
+
+    @Transactional
+    public Expense replaceReceipt(UUID spaceId, UUID expenseId, UUID userId, String receiptPath) {
+        accessService.requireWriteAccess(spaceId, userId);
+        Expense expense = getOwned(spaceId, expenseId);
+        String previousReceipt = expense.getReceiptPath();
+        expense.attachReceipt(receiptPath, userId);
+        Expense saved = expenseRepository.save(expense);
+        if (previousReceipt != null) {
+            receiptStorage.delete(previousReceipt);
+        }
+        return saved;
     }
 
     public ReceiptStoragePort.StoredReceipt getReceipt(UUID spaceId, UUID expenseId, UUID userId) {

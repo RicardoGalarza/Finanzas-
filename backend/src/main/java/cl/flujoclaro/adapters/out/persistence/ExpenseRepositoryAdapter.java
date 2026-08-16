@@ -79,6 +79,7 @@ public class ExpenseRepositoryAdapter implements ExpenseRepositoryPort {
         entity.status = expense.getStatus().name();
         entity.expenseType = expense.getExpenseType().name();
         entity.frequency = expense.getFrequency() != null ? expense.getFrequency().name() : null;
+        entity.recurrenceEndDate = expense.getRecurrenceEndDate();
         entity.paymentMethod = expense.getPaymentMethod();
         entity.receiptPath = expense.getReceiptPath();
         entity.notes = expense.getNotes();
@@ -101,6 +102,7 @@ public class ExpenseRepositoryAdapter implements ExpenseRepositoryPort {
         expense.setStatus(ExpenseStatus.valueOf(entity.status));
         expense.setExpenseType(RecurrenceType.valueOf(entity.expenseType));
         expense.setFrequency(entity.frequency != null ? Frequency.valueOf(entity.frequency) : null);
+        expense.setRecurrenceEndDate(entity.recurrenceEndDate);
         expense.setPaymentMethod(entity.paymentMethod);
         expense.setReceiptPath(entity.receiptPath);
         expense.setNotes(entity.notes);

@@ -32,6 +32,8 @@ public class ExpenseEntity {
     @Column(name = "expense_type", nullable = false)
     public String expenseType;
     public String frequency;
+    @Column(name = "recurrence_end_date")
+    public LocalDate recurrenceEndDate;
     @Column(name = "payment_method")
     public String paymentMethod;
     @Column(name = "receipt_path")

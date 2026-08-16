@@ -52,6 +52,7 @@ public class AuthRequests {
         @Max(30)
         public int reminderDays;
         public java.util.UUID spaceId;
+        public java.math.BigDecimal initialBalance;
     }
 
     public static class ChangePasswordRequest {

@@ -83,6 +83,7 @@ public class ExpenseResource {
     public Response pay(@PathParam("spaceId") UUID spaceId,
                         @PathParam("expenseId") UUID expenseId,
                         @RestForm String paidAt,
+                        @RestForm String paymentMethod,
                         @RestForm("receipt") FileUpload receipt) {
         UUID userId = UUID.fromString(jwt.getSubject());
         LocalDate paymentDate;
@@ -102,7 +103,7 @@ public class ExpenseResource {
                 );
             }
             return Response.ok(
-                    expenseService.markPaid(spaceId, expenseId, userId, paymentDate, storageKey)
+                    expenseService.markPaid(spaceId, expenseId, userId, paymentDate, paymentMethod, storageKey)
             ).build();
         } catch (RuntimeException e) {
             if (storageKey != null) {
@@ -126,6 +127,31 @@ public class ExpenseResource {
                 .build();
     }
 
+    @POST
+    @Path("/{expenseId}/receipt")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    public Response replaceReceipt(@PathParam("spaceId") UUID spaceId,
+                                   @PathParam("expenseId") UUID expenseId,
+                                   @RestForm("receipt") FileUpload receipt) {
+        if (receipt == null || receipt.size() == 0) {
+            throw new DomainException("Debes seleccionar un comprobante");
+        }
+        UUID userId = UUID.fromString(jwt.getSubject());
+        String storageKey = receiptStorage.save(
+                receipt.uploadedFile(),
+                receipt.fileName(),
+                receipt.contentType()
+        );
+        try {
+            return Response.ok(
+                    expenseService.replaceReceipt(spaceId, expenseId, userId, storageKey)
+            ).build();
+        } catch (RuntimeException e) {
+            receiptStorage.delete(storageKey);
+            throw e;
+        }
+    }
+
     @DELETE
     @Path("/{expenseId}")
     public Response delete(@PathParam("spaceId") UUID spaceId, @PathParam("expenseId") UUID expenseId) {
@@ -143,6 +169,7 @@ public class ExpenseResource {
                 request.responsiblePerson,
                 request.expenseType,
                 request.frequency,
+                request.recurrenceEndDate,
                 request.paymentMethod,
                 request.notes
         );

@@ -186,7 +186,10 @@ public class AuthService {
 
     @Transactional
     public User updateProfile(UUID userId, UUID spaceId, String fullName, String country,
-                              String currencyCode, int reminderDays) {
+                              String currencyCode, int reminderDays, BigDecimal initialBalance) {
+        if (initialBalance != null && initialBalance.compareTo(BigDecimal.ZERO) < 0) {
+            throw new DomainException("El saldo inicial no puede ser negativo");
+        }
         User user = getUser(userId);
         user.updateProfile(fullName, country, currencyCode, reminderDays);
         User saved = userRepository.save(user);
@@ -196,6 +199,9 @@ public class AuthService {
                     .filter(Membership::canManageMembers)
                     .ifPresent(membership -> spaceRepository.findById(spaceId).ifPresent(space -> {
                         space.setCurrencyCode(currencyCode.toUpperCase());
+                        if (initialBalance != null) {
+                            space.setInitialBalance(initialBalance);
+                        }
                         space.setUpdatedAt(Instant.now());
                         spaceRepository.save(space);
                     }));

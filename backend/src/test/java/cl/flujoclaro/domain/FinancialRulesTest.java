@@ -1,13 +1,18 @@
 package cl.flujoclaro.domain;
 
 import cl.flujoclaro.domain.enums.ExpenseStatus;
+import cl.flujoclaro.domain.enums.Frequency;
+import cl.flujoclaro.domain.enums.RecurrenceType;
+import cl.flujoclaro.domain.model.Expense;
 import cl.flujoclaro.domain.model.FinancialSummaryCalculator;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class FinancialRulesTest {
 
@@ -38,5 +43,44 @@ class FinancialRulesTest {
                 ExpenseStatus.effective(ExpenseStatus.PENDING, LocalDate.now().plusDays(1), LocalDate.now()));
         assertEquals(ExpenseStatus.PAID,
                 ExpenseStatus.effective(ExpenseStatus.PAID, LocalDate.now().minusDays(5), LocalDate.now()));
+    }
+
+    @Test
+    void recurringExpenseCalculatesNextDueDate() {
+        Expense expense = Expense.create(
+                UUID.randomUUID(),
+                "Cuota auto",
+                new BigDecimal("475000"),
+                LocalDate.of(2026, 8, 31),
+                "Auto / cuota",
+                "Ricardo",
+                RecurrenceType.RECURRING,
+                Frequency.MONTHLY,
+                "Banco Estado",
+                null,
+                UUID.randomUUID()
+        );
+
+        assertEquals(LocalDate.of(2026, 9, 30), expense.nextDueDate());
+    }
+
+    @Test
+    void recurringExpenseStopsAfterLastInstallment() {
+        Expense expense = Expense.create(
+                UUID.randomUUID(),
+                "Cuota auto",
+                new BigDecimal("475000"),
+                LocalDate.of(2026, 12, 31),
+                "Auto / cuota",
+                "Ricardo",
+                RecurrenceType.RECURRING,
+                Frequency.MONTHLY,
+                LocalDate.of(2026, 12, 31),
+                "Banco Estado",
+                null,
+                UUID.randomUUID()
+        );
+
+        assertNull(expense.nextDueDate());
     }
 }

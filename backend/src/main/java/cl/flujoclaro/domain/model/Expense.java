@@ -21,6 +21,7 @@ public class Expense {
     private ExpenseStatus status;
     private RecurrenceType expenseType;
     private Frequency frequency;
+    private LocalDate recurrenceEndDate;
     private String paymentMethod;
     private String receiptPath;
     private String notes;
@@ -33,10 +34,16 @@ public class Expense {
     public static Expense create(UUID spaceId, String name, BigDecimal amount, LocalDate dueDate,
                                  String category, String responsiblePerson, RecurrenceType expenseType,
                                  Frequency frequency, String paymentMethod, String notes, UUID actorId) {
+        return create(spaceId, name, amount, dueDate, category, responsiblePerson, expenseType,
+                frequency, null, paymentMethod, notes, actorId);
+    }
+
+    public static Expense create(UUID spaceId, String name, BigDecimal amount, LocalDate dueDate,
+                                 String category, String responsiblePerson, RecurrenceType expenseType,
+                                 Frequency frequency, LocalDate recurrenceEndDate, String paymentMethod,
+                                 String notes, UUID actorId) {
         validateAmount(amount);
-        if (expenseType == RecurrenceType.RECURRING && frequency == null) {
-            throw new DomainException("La frecuencia es obligatoria para gastos recurrentes");
-        }
+        validateRecurrence(expenseType, frequency, dueDate, recurrenceEndDate);
         Expense expense = new Expense();
         expense.id = UUID.randomUUID();
         expense.spaceId = spaceId;
@@ -48,6 +55,7 @@ public class Expense {
         expense.status = ExpenseStatus.PENDING;
         expense.expenseType = expenseType;
         expense.frequency = frequency;
+        expense.recurrenceEndDate = expenseType == RecurrenceType.RECURRING ? recurrenceEndDate : null;
         expense.paymentMethod = paymentMethod;
         expense.notes = notes;
         expense.createdBy = actorId;
@@ -60,11 +68,9 @@ public class Expense {
 
     public void update(String name, BigDecimal amount, LocalDate dueDate, String category,
                        String responsiblePerson, RecurrenceType expenseType, Frequency frequency,
-                       String paymentMethod, String notes, UUID actorId) {
+                       LocalDate recurrenceEndDate, String paymentMethod, String notes, UUID actorId) {
         validateAmount(amount);
-        if (expenseType == RecurrenceType.RECURRING && frequency == null) {
-            throw new DomainException("La frecuencia es obligatoria para gastos recurrentes");
-        }
+        validateRecurrence(expenseType, frequency, dueDate, recurrenceEndDate);
         this.name = name.trim();
         this.amount = amount;
         this.dueDate = dueDate;
@@ -72,6 +78,7 @@ public class Expense {
         this.responsiblePerson = responsiblePerson;
         this.expenseType = expenseType;
         this.frequency = frequency;
+        this.recurrenceEndDate = expenseType == RecurrenceType.RECURRING ? recurrenceEndDate : null;
         this.paymentMethod = paymentMethod;
         this.notes = notes;
         this.updatedBy = actorId;
@@ -82,8 +89,15 @@ public class Expense {
     }
 
     public void markPaid(LocalDate paidAt, UUID actorId) {
+        markPaid(paidAt, null, actorId);
+    }
+
+    public void markPaid(LocalDate paidAt, String paymentMethod, UUID actorId) {
         this.status = ExpenseStatus.PAID;
         this.paidAt = paidAt != null ? paidAt : LocalDate.now();
+        if (paymentMethod != null && !paymentMethod.isBlank()) {
+            this.paymentMethod = paymentMethod.trim();
+        }
         this.updatedBy = actorId;
         this.updatedAt = Instant.now();
     }
@@ -95,6 +109,18 @@ public class Expense {
         this.receiptPath = receiptPath;
         this.updatedBy = actorId;
         this.updatedAt = Instant.now();
+    }
+
+    public LocalDate nextDueDate() {
+        if (expenseType != RecurrenceType.RECURRING || frequency == null) {
+            return null;
+        }
+        LocalDate nextDate = switch (frequency) {
+            case WEEKLY -> dueDate.plusWeeks(1);
+            case BIWEEKLY -> dueDate.plusWeeks(2);
+            case MONTHLY -> dueDate.plusMonths(1);
+        };
+        return recurrenceEndDate == null || !nextDate.isAfter(recurrenceEndDate) ? nextDate : null;
     }
 
     public ExpenseStatus effectiveStatus(LocalDate today) {
@@ -109,6 +135,17 @@ public class Expense {
     private static void validateAmount(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new DomainException("El monto debe ser mayor a cero");
+        }
+    }
+
+    private static void validateRecurrence(RecurrenceType expenseType, Frequency frequency,
+                                           LocalDate dueDate, LocalDate recurrenceEndDate) {
+        if (expenseType == RecurrenceType.RECURRING && frequency == null) {
+            throw new DomainException("La frecuencia es obligatoria para gastos recurrentes");
+        }
+        if (expenseType == RecurrenceType.RECURRING && recurrenceEndDate != null
+                && recurrenceEndDate.isBefore(dueDate)) {
+            throw new DomainException("La última cuota no puede ser anterior al primer vencimiento");
         }
     }
 
@@ -132,6 +169,8 @@ public class Expense {
     public void setExpenseType(RecurrenceType expenseType) { this.expenseType = expenseType; }
     public Frequency getFrequency() { return frequency; }
     public void setFrequency(Frequency frequency) { this.frequency = frequency; }
+    public LocalDate getRecurrenceEndDate() { return recurrenceEndDate; }
+    public void setRecurrenceEndDate(LocalDate recurrenceEndDate) { this.recurrenceEndDate = recurrenceEndDate; }
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public String getReceiptPath() { return receiptPath; }

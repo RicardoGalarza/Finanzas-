@@ -44,6 +44,7 @@ public class MovementRequests {
         @NotNull
         public RecurrenceType expenseType;
         public Frequency frequency;
+        public LocalDate recurrenceEndDate;
         public String paymentMethod;
         public String notes;
     }

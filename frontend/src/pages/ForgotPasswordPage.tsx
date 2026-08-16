@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { api, ApiError } from '../lib/api'
+import { useTemporaryMessage } from '../lib/useTemporaryMessage'
 
 const forgotSchema = z.object({ email: z.string().email() })
 const resetSchema = z.object({
@@ -13,7 +14,7 @@ const resetSchema = z.object({
 
 export function ForgotPasswordPage() {
   const [searchParams] = useSearchParams()
-  const [message, setMessage] = useState<string | null>(null)
+  const { message, showMessage } = useTemporaryMessage()
   const [error, setError] = useState<string | null>(null)
   const forgotForm = useForm<z.infer<typeof forgotSchema>>({ resolver: zodResolver(forgotSchema) })
   const resetForm = useForm<z.infer<typeof resetSchema>>({ resolver: zodResolver(resetSchema) })
@@ -44,7 +45,7 @@ export function ForgotPasswordPage() {
                 method: 'POST',
                 body: JSON.stringify(values),
               })
-              setMessage(res.message)
+              showMessage(res.message)
             } catch (e) {
               setError(e instanceof ApiError ? e.message : 'Error al solicitar recuperación')
             }
@@ -68,7 +69,7 @@ export function ForgotPasswordPage() {
                 method: 'POST',
                 body: JSON.stringify(values),
               })
-              setMessage(res.message)
+              showMessage(res.message)
               resetForm.reset()
             } catch (e) {
               setError(e instanceof ApiError ? e.message : 'Error al restablecer')

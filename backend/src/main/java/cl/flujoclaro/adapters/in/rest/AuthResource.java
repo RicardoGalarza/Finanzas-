@@ -100,7 +100,8 @@ public class AuthResource {
                 request.fullName,
                 request.country,
                 request.currencyCode,
-                request.reminderDays
+                request.reminderDays,
+                request.initialBalance
         );
         return Response.ok(Map.of(
                 "message", "Perfil actualizado",
