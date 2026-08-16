@@ -11,6 +11,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { useAuth } from '../auth'
+import { FinanceChatWidget } from './FinanceChatWidget'
 
 export function AppLayout() {
   const { user, spaces, spaceId, setSpaceId, logout } = useAuth()
@@ -100,6 +101,8 @@ export function AppLayout() {
       <main className="content">
         <Outlet />
       </main>
+
+      <FinanceChatWidget />
 
       <nav className="bottom-nav">
         {links.map((link) => (

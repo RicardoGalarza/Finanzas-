@@ -131,12 +131,17 @@ export function ProfilePage() {
     .toUpperCase() ?? 'FC'
 
   return (
-    <div className="stack">
-      <h1 style={{ margin: 0 }}>Perfil y configuración</h1>
-      <article className="card stack">
-        {message && <div className="alert success">{message}</div>}
-        {error && <div className="alert error">{error}</div>}
-        <div className="profile-header">
+    <div className="profile-page">
+      <div className="profile-page__header">
+        <h1 style={{ margin: 0 }}>Perfil y configuración</h1>
+        <p className="muted">Administra tu cuenta y preferencias</p>
+      </div>
+
+      {message && <div className="alert success">{message}</div>}
+      {error && <div className="alert error">{error}</div>}
+
+      <article className="card profile-card profile-card--hero">
+        <div className="profile-hero">
           <div className="profile-avatar" aria-label="Foto de perfil">
             {avatarUrl ? <img src={avatarUrl} alt={`Foto de ${user?.fullName}`} /> : <span>{initials}</span>}
           </div>
@@ -156,20 +161,29 @@ export function ProfilePage() {
               />
             </label>
           </div>
-        </div>
-        <div className="form-grid">
-          <div><strong>Espacio activo</strong><div className="muted">{space?.name}</div></div>
-          <div><strong>Rol</strong><div className="muted">{space?.role}</div></div>
+          <div className="profile-meta">
+            <div className="profile-meta__item">
+              <span className="profile-meta__label">Espacio</span>
+              <strong>{space?.name}</strong>
+            </div>
+            <div className="profile-meta__item">
+              <span className="profile-meta__label">Rol</span>
+              <strong>{space?.role}</strong>
+            </div>
+          </div>
+          <button type="button" className="btn secondary profile-logout" onClick={logout}>
+            Cerrar sesión
+          </button>
         </div>
       </article>
 
-      <article className="card stack">
-        <div>
-          <h2 style={{ margin: 0, fontSize: '1.15rem' }}>Datos y preferencias</h2>
+      <article className="card profile-card stack">
+        <div className="profile-section-title">
+          <h2>Datos y preferencias</h2>
           <p className="muted">Configura cómo se muestra y organiza tu información.</p>
         </div>
         <form className="stack" onSubmit={saveProfile}>
-          <div className="form-grid">
+          <div className="profile-form-grid">
             <label>
               Nombre completo
               <input value={fullName} onChange={(event) => setFullName(event.target.value)} required />
@@ -204,23 +218,26 @@ export function ProfilePage() {
               </select>
             </label>
           </div>
-          <button className="btn profile-save-button" disabled={savingProfile}>
-            {savingProfile ? 'Guardando...' : 'Guardar configuración'}
-          </button>
+          <div className="profile-actions">
+            <button className="btn" disabled={savingProfile}>
+              {savingProfile ? 'Guardando...' : 'Guardar configuración'}
+            </button>
+          </div>
         </form>
       </article>
 
-      <article className="card stack">
-        <div>
-          <h2 style={{ margin: 0, fontSize: '1.15rem' }}>Seguridad</h2>
+      <article className="card profile-card stack">
+        <div className="profile-section-title">
+          <h2>Seguridad</h2>
           <p className="muted">Cambia tu contraseña de acceso.</p>
         </div>
         <form className="stack" onSubmit={changePassword}>
-          <div className="form-grid">
+          <div className="profile-form-grid">
             <label>
               Contraseña actual
               <input
                 type="password"
+                autoComplete="current-password"
                 value={currentPassword}
                 onChange={(event) => setCurrentPassword(event.target.value)}
                 required
@@ -230,16 +247,18 @@ export function ProfilePage() {
               Nueva contraseña
               <input
                 type="password"
+                autoComplete="new-password"
                 minLength={8}
                 value={newPassword}
                 onChange={(event) => setNewPassword(event.target.value)}
                 required
               />
             </label>
-            <label>
+            <label className="profile-form-grid__full">
               Confirmar nueva contraseña
               <input
                 type="password"
+                autoComplete="new-password"
                 minLength={8}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
@@ -247,13 +266,13 @@ export function ProfilePage() {
               />
             </label>
           </div>
-          <button className="btn profile-save-button" disabled={savingPassword}>
-            {savingPassword ? 'Actualizando...' : 'Cambiar contraseña'}
-          </button>
+          <div className="profile-actions">
+            <button className="btn" disabled={savingPassword}>
+              {savingPassword ? 'Actualizando...' : 'Cambiar contraseña'}
+            </button>
+          </div>
         </form>
       </article>
-
-      <button className="btn secondary" onClick={logout}>Cerrar sesión</button>
     </div>
   )
 }

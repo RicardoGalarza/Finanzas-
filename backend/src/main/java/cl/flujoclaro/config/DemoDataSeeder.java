@@ -107,6 +107,7 @@ public class DemoDataSeeder {
                 "Usuario Demo",
                 RecurrenceType.ONE_TIME,
                 null,
+                null,
                 "Tarjeta",
                 "Dato demo"
         ));
@@ -118,6 +119,7 @@ public class DemoDataSeeder {
                 "Usuario Demo",
                 RecurrenceType.RECURRING,
                 Frequency.MONTHLY,
+                today.plusMonths(12),
                 null,
                 "Vencida demo"
         ));

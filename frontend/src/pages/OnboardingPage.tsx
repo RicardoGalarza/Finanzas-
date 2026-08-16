@@ -12,11 +12,6 @@ const schema = z.object({
   currencyCode: z.string().min(3),
   shared: z.boolean(),
   spaceName: z.string().min(2),
-  incomeDescription: z.string().optional(),
-  incomeAmount: z.coerce.number().min(0).optional(),
-  billName: z.string().optional(),
-  billAmount: z.coerce.number().min(0).optional(),
-  billDueDay: z.coerce.number().min(1).max(28).optional(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -32,30 +27,12 @@ export function OnboardingPage() {
       currencyCode: 'CLP',
       shared: false,
       spaceName: 'Mi espacio',
-      billDueDay: 5,
     },
   })
 
   const onSubmit = handleSubmit(async (values) => {
     setError(null)
     try {
-      const incomes = values.incomeAmount && values.incomeAmount > 0
-        ? [{
-            description: values.incomeDescription || 'Ingreso habitual',
-            amount: values.incomeAmount,
-            category: 'Sueldo',
-            frequency: 'MONTHLY',
-          }]
-        : []
-      const bills = values.billAmount && values.billAmount > 0
-        ? [{
-            name: values.billName || 'Cuenta mensual',
-            amount: values.billAmount,
-            category: 'Otros',
-            dueDay: values.billDueDay || 5,
-          }]
-        : []
-
       await api('/api/onboarding', {
         method: 'POST',
         body: JSON.stringify({
@@ -65,8 +42,8 @@ export function OnboardingPage() {
           initialBalance: 0,
           shared: values.shared,
           spaceName: values.spaceName,
-          incomes,
-          bills,
+          incomes: [],
+          bills: [],
         }),
       }, token)
       await refreshProfile()
@@ -78,10 +55,12 @@ export function OnboardingPage() {
 
   return (
     <div className="auth-layout">
-      <form className="auth-card stack" onSubmit={onSubmit} style={{ width: 'min(720px, 100%)' }}>
+      <form className="auth-card stack" onSubmit={onSubmit} style={{ width: 'min(560px, 100%)' }}>
         <div>
           <h1>Configuración inicial</h1>
-          <p className="muted">Personaliza tu espacio financiero en unos minutos</p>
+          <p className="muted">
+            Personaliza tu espacio. Después podrás agregar ingresos y gastos desde el menú.
+          </p>
         </div>
         {error && <div className="alert error">{error}</div>}
         <div className="form-grid">
@@ -100,17 +79,6 @@ export function OnboardingPage() {
             <input type="checkbox" {...register('shared')} />
             Administraré con otras personas
           </label>
-        </div>
-        <h3>Ingreso habitual (opcional)</h3>
-        <div className="form-grid">
-          <label>Descripción<input {...register('incomeDescription')} placeholder="Sueldo" /></label>
-          <label>Monto<input type="number" {...register('incomeAmount')} /></label>
-        </div>
-        <h3>Cuenta mensual principal (opcional)</h3>
-        <div className="form-grid">
-          <label>Nombre<input {...register('billName')} placeholder="Arriendo" /></label>
-          <label>Monto<input type="number" {...register('billAmount')} /></label>
-          <label>Día de vencimiento<input type="number" {...register('billDueDay')} /></label>
         </div>
         <button className="btn" disabled={isSubmitting}>
           {isSubmitting ? 'Guardando...' : 'Ir al dashboard'}

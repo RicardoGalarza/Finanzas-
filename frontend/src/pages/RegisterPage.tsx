@@ -26,6 +26,7 @@ export function RegisterPage() {
     setError(null)
     try {
       await registerUser(values.fullName, values.email, values.password)
+      localStorage.setItem('flujoclaro_remembered_email', values.email.trim().toLowerCase())
       navigate('/onboarding')
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'No se pudo registrar')
@@ -47,12 +48,22 @@ export function RegisterPage() {
         </label>
         <label>
           Correo
-          <input type="email" {...register('email')} />
+          <input
+            type="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            spellCheck={false}
+            {...register('email')}
+          />
           {errors.email && <span className="muted">{errors.email.message}</span>}
         </label>
         <label>
           Contraseña
-          <input type="password" {...register('password')} />
+          <input
+            type="password"
+            autoComplete="new-password"
+            {...register('password')}
+          />
           {errors.password && <span className="muted">{errors.password.message}</span>}
         </label>
         <button className="btn" disabled={isSubmitting}>
